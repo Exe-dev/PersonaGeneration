@@ -58,8 +58,8 @@ df_reddit_conversation
 
 
 # In[280]:
-
-
+print(df_reddit_conversation.head(5))
+print(df_reddit_conversation.tail(5))
 df_reddit_conversation = pd.DataFrame(list_reddit_conversation)
 df_reddit_conversation = df_reddit_conversation[df_reddit_conversation["body"]!="[deleted]"]
 df_reddit_conversation["body"] = df_reddit_conversation["body"].replace(["&lt","&gt","&amp"],["","",""])
