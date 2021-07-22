@@ -21,7 +21,7 @@ from tqdm import tqdm
 import glob
 import dask.dataframe as dd
 import spacy
-import neuralcoref
+#import neuralcoref
 
 
 # In[276]:
