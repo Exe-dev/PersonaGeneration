@@ -17,16 +17,17 @@
 
 # # Constant Value
 
-# In[62]:
+# In[64]:
 
 
-NPARTITIONS = 15
+NPARTITIONS = 10
 PATH = "./reddit_data/*/*.json"
+SCHEDULER = "threads"
 
 
 # # Imports
 
-# In[63]:
+# In[65]:
 
 
 import pandas as pd 
@@ -37,19 +38,21 @@ import glob
 import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
 import spacy
-#import neuralcoref
+import neuralcoref
 
 
-# In[64]:
+# In[66]:
 
 
 tqdm.pandas()
 ProgressBar().register()
+nlp = spacy.load('en_core_web_sm')
+neuralcoref.add_to_pipe(nlp)
 
 
 # # reddit_data下の全てのjsonファイルを読み込む
 
-# In[65]:
+# In[67]:
 
 
 list_bz2_file = glob.glob(PATH)
@@ -57,7 +60,7 @@ list_reddit_conversation = []
 list_bz2_file
 
 
-# In[66]:
+# In[68]:
 
 
 for i in range(0,len(list_bz2_file)):
@@ -67,7 +70,7 @@ for i in range(0,len(list_bz2_file)):
             list_reddit_conversation.append(dic)
 
 
-# In[67]:
+# In[69]:
 
 
 df_reddit_conversation = pd.DataFrame(list_reddit_conversation)
@@ -77,7 +80,7 @@ df_reddit_conversation
 
 # # 会話ペアの作成
 
-# In[68]:
+# In[70]:
 
 
 df_reddit_conversation = pd.DataFrame(list_reddit_conversation)
@@ -89,17 +92,13 @@ df_reddit_conversation["body"] = df_reddit_conversation["body"].str.replace('\"'
 df_reddit_conversation["parent_body"] = df_reddit_conversation["parent_body"].str.replace('\"','’')
 df_reddit_conversation = pd.merge(df_reddit_conversation,df_reddit_conversation[["id","body"]].rename(columns={"id":"parent_id","body":"parent_body"}),left_on="removed_prefix_parent_id",right_on="parent_id").drop(columns=["parent_body_x","parent_id_y"]).rename(columns={"parent_body_y":"parent_body"})
 df_reddit_conversation = df_reddit_conversation.dropna(subset=["parent_body"]).sort_values(["author"]).reset_index(drop=True)
-df_reddit_conversation = df_reddit_conversation[["body","parent_body","ups","author"]]
+df_reddit_conversation["original_body"] = df_reddit_conversation["body"]
+df_reddit_conversation["original_parent_body"] = df_reddit_conversation["parent_body"]
+df_reddit_conversation = df_reddit_conversation[["body","parent_body","original_body","original_parent_body","ups","author"]]
 df_reddit_conversation
 
 
-# In[69]:
-
-
-nlp = spacy.load("en_core_web_sm")
-
-
-# In[70]:
+# In[71]:
 
 
 def CreatePersona(body: str):
@@ -109,7 +108,7 @@ def CreatePersona(body: str):
     return persona
 
 
-# In[71]:
+# In[72]:
 
 
 def IsPersona(sentence: str):
@@ -144,18 +143,30 @@ def create_json(row):
     }
 
 
-# # ペルソナの作成
-
 # In[74]:
 
 
+def reference_resolution(sentence):
+    return nlp(sentence)._.coref_resolved
+
+
+# In[75]:
+
+
 ddf_reddit_conversation = dd.from_pandas(data=df_reddit_conversation, npartitions=NPARTITIONS)
-ddf_reddit_conversation["persona"] = ddf_reddit_conversation["body"].map(CreatePersona).compute(scheduler='processes')
-ddf_reddit_conversation["parent_persona"] = ddf_reddit_conversation["parent_body"].map(CreatePersona).compute(scheduler='processes')
-#ddf_reddit_conversation = ddf_reddit_conversation[(df_reddit_conversation.astype(str)["persona"] !="[]")|(ddf_reddit_conversation.astype(str)["parent_persona"] !="[]")].reset_index(drop=True)
-#ddf_reddit_conversation["body"] = ddf_reddit_conversation["body"].map(lambda x: [x] ).compute(scheduler='processes')
-#ddf_reddit_conversation["parent_body"] = ddf_reddit_conversation["parent_body"].map(lambda x: [x] ).compute(scheduler='processes')
-df_reddit_conversation = ddf_reddit_conversation.compute()
+ddf_reddit_conversation["persona"] = ddf_reddit_conversation["original_body"].map(CreatePersona)
+ddf_reddit_conversation["parent_persona"] = ddf_reddit_conversation["original_parent_body"].map(CreatePersona)
+ddf_reddit_conversation = ddf_reddit_conversation.query("persona.notnull() & parent_persona.notnull()")
+ddf_reddit_conversation["body"] = ddf_reddit_conversation["body"].map(reference_resolution)
+ddf_reddit_conversation["parent_body"] = ddf_reddit_conversation["parent_body"].map(reference_resolution)
+df_reddit_conversation = ddf_reddit_conversation.compute(scheduler=SCHEDULER)
+
+
+# # ペルソナの作成
+
+# In[77]:
+
+
 df_reddit_conversation = df_reddit_conversation[(df_reddit_conversation.astype(str)["persona"] !="[]")|(df_reddit_conversation.astype(str)["parent_persona"] !="[]")].reset_index(drop=True)
 df_reddit_conversation["body"] = df_reddit_conversation["body"].progress_map(lambda x: [x] )
 df_reddit_conversation["parent_body"] = df_reddit_conversation["parent_body"].progress_map(lambda x: [x] )
@@ -165,7 +176,7 @@ df_reddit_conversation
 
 # # Json形式の作成
 
-# In[ ]:
+# In[78]:
 
 
 df_reddit_conversation["json"] = df_reddit_conversation.progress_apply(create_json, axis=1)
@@ -174,13 +185,13 @@ df_reddit_conversation
 
 # # Outputs
 
-# In[ ]:
+# In[79]:
 
 
 df_reddit_conversation.to_csv("persona.csv")
 
 
-# In[ ]:
+# In[80]:
 
 
 list_json = df_reddit_conversation["json"].tolist()
@@ -189,7 +200,7 @@ with open("created_dialogues.json", "wt", encoding="utf-8") as file:
         file.write(str(json.dumps(dic))+"\n")
 
 
-# In[ ]:
+# In[81]:
 
 
 import subprocess
