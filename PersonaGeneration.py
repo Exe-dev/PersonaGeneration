@@ -17,7 +17,7 @@
 
 # # Constant Value
 
-# In[82]:
+# In[19]:
 
 
 NPARTITIONS = 1000
@@ -27,7 +27,7 @@ SCHEDULER = "threads"
 
 # # Imports
 
-# In[83]:
+# In[3]:
 
 
 import pandas as pd 
@@ -41,7 +41,7 @@ import spacy
 #import neuralcoref
 
 
-# In[84]:
+# In[4]:
 
 
 tqdm.pandas()
@@ -52,7 +52,7 @@ nlp = spacy.load('en_core_web_sm')
 
 # # reddit_data下の全てのjsonファイルを読み込む
 
-# In[85]:
+# In[5]:
 
 
 list_bz2_file = glob.glob(PATH)
@@ -60,17 +60,17 @@ list_reddit_conversation = []
 list_bz2_file
 
 
-# In[86]:
+# In[20]:
 
 
-for i in range(0,len(list_bz2_file)):
+for i in tqdm(range(0,len(list_bz2_file))):
     with open(list_bz2_file[i]) as f:
         for line in f.readlines():
             dic=json.loads(line)
             list_reddit_conversation.append(dic)
 
 
-# In[87]:
+# In[7]:
 
 
 df_reddit_conversation = pd.DataFrame(list_reddit_conversation)
@@ -80,7 +80,7 @@ df_reddit_conversation
 
 # # 会話ペアの作成
 
-# In[88]:
+# In[8]:
 
 
 df_reddit_conversation = pd.DataFrame(list_reddit_conversation)
@@ -98,7 +98,7 @@ df_reddit_conversation = df_reddit_conversation[["body","parent_body","original_
 df_reddit_conversation
 
 
-# In[89]:
+# In[9]:
 
 
 def CreatePersona(body: str):
@@ -108,7 +108,7 @@ def CreatePersona(body: str):
     return persona
 
 
-# In[90]:
+# In[10]:
 
 
 def IsPersona(sentence: str):
@@ -125,7 +125,7 @@ def IsPersona(sentence: str):
     )
 
 
-# In[91]:
+# In[11]:
 
 
 def create_json(row):
@@ -143,14 +143,14 @@ def create_json(row):
     }
 
 
-# In[92]:
+# In[12]:
 
 
 def reference_resolution(sentence):
     return nlp(sentence)._.coref_resolved
 
 
-# In[93]:
+# In[13]:
 
 
 ddf_reddit_conversation = dd.from_pandas(data=df_reddit_conversation, npartitions=NPARTITIONS)
@@ -164,7 +164,7 @@ df_reddit_conversation = ddf_reddit_conversation.compute(scheduler=SCHEDULER)
 
 # # ペルソナの作成
 
-# In[94]:
+# In[14]:
 
 
 df_reddit_conversation = df_reddit_conversation[(df_reddit_conversation.astype(str)["persona"] !="[]")|(df_reddit_conversation.astype(str)["parent_persona"] !="[]")].reset_index(drop=True)
@@ -176,7 +176,7 @@ df_reddit_conversation
 
 # # Json形式の作成
 
-# In[95]:
+# In[15]:
 
 
 df_reddit_conversation["json"] = df_reddit_conversation.progress_apply(create_json, axis=1)
@@ -185,13 +185,13 @@ df_reddit_conversation
 
 # # Outputs
 
-# In[96]:
+# In[16]:
 
 
 df_reddit_conversation.to_csv("persona.csv")
 
 
-# In[97]:
+# In[17]:
 
 
 list_json = df_reddit_conversation["json"].tolist()
@@ -200,7 +200,7 @@ with open("created_dialogues.json", "wt", encoding="utf-8") as file:
         file.write(str(json.dumps(dic))+"\n")
 
 
-# In[1]:
+# In[21]:
 
 
 import subprocess
