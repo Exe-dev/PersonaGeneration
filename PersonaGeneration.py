@@ -20,7 +20,7 @@
 # In[82]:
 
 
-NPARTITIONS = 10
+NPARTITIONS = 1000
 PATH = "./reddit_data/*/*.json"
 SCHEDULER = "threads"
 
