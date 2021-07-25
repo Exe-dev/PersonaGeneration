@@ -2,3 +2,4 @@
 *.csv
 reddit_data/
 neuralcoref/
+outputs/

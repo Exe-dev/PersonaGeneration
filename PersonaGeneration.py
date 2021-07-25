@@ -27,7 +27,7 @@ SCHEDULER = "threads"
 
 # # Imports
 
-# In[3]:
+# In[22]:
 
 
 import pandas as pd 
@@ -38,6 +38,7 @@ import glob
 import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
 import spacy
+import os
 #import neuralcoref
 
 
@@ -185,10 +186,24 @@ df_reddit_conversation
 
 # # Outputs
 
-# In[16]:
+# In[48]:
 
 
-df_reddit_conversation.to_csv("persona.csv")
+if(not os.path.exists("./outputs")):
+    os.makedirs("./outputs/")
+
+
+# In[49]:
+
+
+version = len([f for f in os.listdir("./outputs") if "persona" in f])
+version
+
+
+# In[50]:
+
+
+df_reddit_conversation.to_csv(f"./outputs/persona{version}.csv")
 
 
 # In[17]:
