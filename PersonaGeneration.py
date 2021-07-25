@@ -38,7 +38,7 @@ import glob
 import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
 import spacy
-import neuralcoref
+#import neuralcoref
 
 
 # In[84]:
@@ -47,7 +47,7 @@ import neuralcoref
 tqdm.pandas()
 ProgressBar().register()
 nlp = spacy.load('en_core_web_sm')
-neuralcoref.add_to_pipe(nlp)
+#neuralcoref.add_to_pipe(nlp)
 
 
 # # reddit_data下の全てのjsonファイルを読み込む
@@ -157,8 +157,8 @@ ddf_reddit_conversation = dd.from_pandas(data=df_reddit_conversation, npartition
 ddf_reddit_conversation["persona"] = ddf_reddit_conversation["original_body"].map(CreatePersona)
 ddf_reddit_conversation["parent_persona"] = ddf_reddit_conversation["original_parent_body"].map(CreatePersona)
 ddf_reddit_conversation = ddf_reddit_conversation.query("persona.notnull() & parent_persona.notnull()")
-ddf_reddit_conversation["body"] = ddf_reddit_conversation["body"].map(reference_resolution)
-ddf_reddit_conversation["parent_body"] = ddf_reddit_conversation["parent_body"].map(reference_resolution)
+#ddf_reddit_conversation["body"] = ddf_reddit_conversation["body"].map(reference_resolution)
+#ddf_reddit_conversation["parent_body"] = ddf_reddit_conversation["parent_body"].map(reference_resolution)
 df_reddit_conversation = ddf_reddit_conversation.compute(scheduler=SCHEDULER)
 
 
@@ -200,7 +200,7 @@ with open("created_dialogues.json", "wt", encoding="utf-8") as file:
         file.write(str(json.dumps(dic))+"\n")
 
 
-# In[98]:
+# In[1]:
 
 
 import subprocess
