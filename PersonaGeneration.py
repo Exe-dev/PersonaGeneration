@@ -51,6 +51,20 @@ nlp = spacy.load('en_core_web_sm')
 #neuralcoref.add_to_pipe(nlp)
 
 
+# In[48]:
+
+
+if(not os.path.exists("./outputs")):
+    os.makedirs("./outputs/")
+
+
+# In[53]:
+
+
+version = len([f for f in os.listdir("./outputs") if "persona" in f])
+version
+
+
 # # reddit_data下の全てのjsonファイルを読み込む
 
 # In[5]:
@@ -75,7 +89,7 @@ for i in tqdm(range(0,len(list_bz2_file))):
 
 
 df_reddit_conversation = pd.DataFrame(list_reddit_conversation)
-df_reddit_conversation.to_csv("AllConversation.csv")
+df_reddit_conversation.to_csv(f"./outputs/AllConversation{version}.csv")
 df_reddit_conversation
 
 
@@ -186,20 +200,6 @@ df_reddit_conversation
 
 # # Outputs
 
-# In[48]:
-
-
-if(not os.path.exists("./outputs")):
-    os.makedirs("./outputs/")
-
-
-# In[49]:
-
-
-version = len([f for f in os.listdir("./outputs") if "persona" in f])
-version
-
-
 # In[50]:
 
 
@@ -215,7 +215,7 @@ with open("created_dialogues.json", "wt", encoding="utf-8") as file:
         file.write(str(json.dumps(dic))+"\n")
 
 
-# In[21]:
+# In[52]:
 
 
 import subprocess
