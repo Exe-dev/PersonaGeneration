@@ -15,9 +15,12 @@
 
 # {'dialog': ["For what it's worth, I don't have a problem with it.", 'My apologies.  I did not have any problems with it, but I will be more careful in the future.'], 'profile': [{'tag': ["for what it's worth, i don't have a problem with it."], 'loc': '', 'gender': ''}, {'tag': [' i did not have any problems with it, but i will be more careful in the future.'], 'loc': '', 'gender': ''}], 'uid': [0, 1]}
 
+# # test_data Example
+# {"uid": [0, 1, 2], "dialog": [["剧烈运动 是 吧"], ["各种 剧烈运动"], ["... 姐 最近 有点 寂寞 过头 了 ..."]], "responder_profile": {"loc": "海南", "gender": "female", "tag": "美食;宅;80后"}, "profile": [{"loc": "天津 滨海新区", "gender": "male", "tag": ""}, {"loc": "海南", "gender": "female", "tag": "美食;宅;80后"}, {"loc": "安徽 合肥", "gender": "male", "tag": "游戏动漫;双子座;宅;音乐;90后;WOW台服众"}], "golden_response": ["可不是 ， 我 又 不 像 你 ， 有 女神 。"]}
+
 # # Constant Value
 
-# In[74]:
+# In[94]:
 
 
 NPARTITIONS = 1000
@@ -27,7 +30,7 @@ SCHEDULER = "threads"
 
 # # Imports
 
-# In[75]:
+# In[95]:
 
 
 import pandas as pd 
@@ -42,7 +45,7 @@ import os
 #import neuralcoref
 
 
-# In[76]:
+# In[96]:
 
 
 tqdm.pandas()
@@ -51,14 +54,14 @@ nlp = spacy.load('en_core_web_sm')
 #neuralcoref.add_to_pipe(nlp)
 
 
-# In[77]:
+# In[97]:
 
 
 if(not os.path.exists("./outputs")):
     os.makedirs("./outputs/")
 
 
-# In[78]:
+# In[98]:
 
 
 version = len([f for f in os.listdir("./outputs") if "persona" in f])
@@ -67,7 +70,7 @@ version
 
 # # reddit_data下の全てのjsonファイルを読み込む
 
-# In[79]:
+# In[99]:
 
 
 list_bz2_file = glob.glob(PATH)
@@ -75,7 +78,7 @@ list_reddit_conversation = []
 list_bz2_file
 
 
-# In[80]:
+# In[100]:
 
 
 print("----------read input json files----------")
@@ -86,7 +89,7 @@ for i in tqdm(range(0,len(list_bz2_file))):
             list_reddit_conversation.append(dic)
 
 
-# In[81]:
+# In[101]:
 
 
 df_reddit_conversation = pd.DataFrame(list_reddit_conversation)
@@ -96,7 +99,7 @@ df_reddit_conversation
 
 # # 会話ペアの作成
 
-# In[82]:
+# In[102]:
 
 
 df_reddit_conversation = pd.DataFrame(list_reddit_conversation)
@@ -114,7 +117,7 @@ df_reddit_conversation = df_reddit_conversation[["body","parent_body","original_
 df_reddit_conversation
 
 
-# In[83]:
+# In[103]:
 
 
 def CreatePersona(body: str):
@@ -124,7 +127,7 @@ def CreatePersona(body: str):
     return persona
 
 
-# In[84]:
+# In[104]:
 
 
 def IsPersona(sentence: str):
@@ -141,7 +144,7 @@ def IsPersona(sentence: str):
     )
 
 
-# In[85]:
+# In[105]:
 
 
 def create_json(row):
@@ -159,7 +162,7 @@ def create_json(row):
     }
 
 
-# In[86]:
+# In[106]:
 
 
 def reference_resolution(sentence):
@@ -168,7 +171,7 @@ def reference_resolution(sentence):
 
 # # ペルソナの作成
 
-# In[87]:
+# In[107]:
 
 
 print("----------create conversation pair ----------")
@@ -181,7 +184,7 @@ ddf_reddit_conversation = ddf_reddit_conversation.query("persona.notnull() & par
 df_reddit_conversation = ddf_reddit_conversation.compute(scheduler=SCHEDULER)
 
 
-# In[88]:
+# In[108]:
 
 
 print("----------create persona ----------")
@@ -194,7 +197,7 @@ df_reddit_conversation
 
 # # Json形式の作成
 
-# In[89]:
+# In[109]:
 
 
 df_reddit_conversation["json"] = df_reddit_conversation.progress_apply(create_json, axis=1)
@@ -203,13 +206,13 @@ df_reddit_conversation
 
 # # Outputs
 
-# In[90]:
+# In[110]:
 
 
 df_reddit_conversation.to_csv(f"./outputs/persona{version}.csv")
 
 
-# In[91]:
+# In[111]:
 
 
 list_json = df_reddit_conversation["json"].tolist()
@@ -218,7 +221,7 @@ with open(f"created_dialogues{version}.json", "wt", encoding="utf-8") as file:
         file.write(str(json.dumps(dic))+"\n")
 
 
-# In[93]:
+# In[112]:
 
 
 import subprocess

@@ -47,7 +47,7 @@
 
 # # Constant Value
 
-# In[7]:
+# In[44]:
 
 
 NPARTITIONS = 1000
@@ -57,7 +57,7 @@ SCHEDULER = "threads"
 
 # # Imports
 
-# In[8]:
+# In[64]:
 
 
 import pandas as pd 
@@ -69,10 +69,11 @@ import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
 import spacy
 import os
+import ast
 #import neuralcoref
 
 
-# In[9]:
+# In[46]:
 
 
 tqdm.pandas()
@@ -81,20 +82,20 @@ nlp = spacy.load('en_core_web_sm')
 #neuralcoref.add_to_pipe(nlp)
 
 
-# In[10]:
+# In[56]:
 
 
 df_input = pd.read_csv(INPUT_PATH)
 df_input.head(5)
 
 
-# In[16]:
+# In[48]:
 
 
 def create_json(row):
     return {
         "uid":[0],
-        "dialog":[row["body"]],
+        "dialog":row["body"],
         "responder_profile":{
             "loc":"",
             "gender":"",
@@ -111,23 +112,31 @@ def create_json(row):
     }
 
 
-# In[17]:
+# In[66]:
 
 
+df_input["body"] = [ast.literal_eval(d) for d in df_input["body"]]
+df_input
+
+
+# In[67]:
+
+
+df_input["body"] = df_input["body"].progress_apply(lambda x: [x])
 df_input["json"] = df_input.progress_apply(create_json, axis=1)
 df_input.head(5)
 
 
-# In[18]:
+# In[68]:
 
 
 list_json = df_input["json"].tolist()
-with open(f"test_data.json", "wt", encoding="utf-8") as file:
+with open(f"./outputs/test_data.json", "wt", encoding="utf-8") as file:
     for dic in list_json:
         file.write(str(json.dumps(dic))+"\n")
 
 
-# In[19]:
+# In[51]:
 
 
 import subprocess
