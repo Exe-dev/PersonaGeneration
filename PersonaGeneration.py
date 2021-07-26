@@ -213,12 +213,12 @@ df_reddit_conversation.to_csv(f"./outputs/persona{version}.csv")
 
 
 list_json = df_reddit_conversation["json"].tolist()
-with open("created_dialogues.json", "wt", encoding="utf-8") as file:
+with open(f"created_dialogues{version}.json", "wt", encoding="utf-8") as file:
     for dic in list_json:
         file.write(str(json.dumps(dic))+"\n")
 
 
-# In[92]:
+# In[93]:
 
 
 import subprocess
