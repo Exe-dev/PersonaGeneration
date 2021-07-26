@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # Rules of persona
-# + Each sentence must contain between 4 and 20 words or punctuation marks.
-# + It contains either the word I or my.
+# # Rules of persona
+# + Each sentence must contain between 4 and 20 words or punctuation marks.
+# + It contains either the word I or my.
 # + At least one verb, and (iv) at least one noun, pronoun or adjective.
 
 # # Example Dialogue with persona
@@ -47,7 +47,7 @@
 
 # # Constant Value
 
-# In[303]:
+# In[311]:
 
 
 NPARTITIONS = 1000
@@ -57,7 +57,7 @@ SCHEDULER = "threads"
 
 # # Imports
 
-# In[304]:
+# In[312]:
 
 
 import pandas as pd 
@@ -73,7 +73,7 @@ import ast
 #import neuralcoref
 
 
-# In[305]:
+# In[313]:
 
 
 tqdm.pandas()
@@ -82,14 +82,14 @@ nlp = spacy.load('en_core_web_sm')
 #neuralcoref.add_to_pipe(nlp)
 
 
-# In[306]:
+# In[319]:
 
 
 df_input = pd.read_csv(INPUT_PATH)
 df_input["body"] = df_input["body"].progress_map(lambda x:x.encode('shift_JIS',errors='ignore').decode('shift_JIS'))
 df_input["parent_body"] = df_input["parent_body"].progress_map(lambda x:x.encode('shift_JIS',errors='ignore').decode('shift_JIS'))
-df_input["persona"] = df_input["persona"].progress_map(lambda x:x.encode('shift_JIS',errors='ignore').decode('shift_JIS'))
-df_input["parent_persona"] = df_input["parent_persona"].progress_map(lambda x:x.encode('shift_JIS',errors='ignore').decode('shift_JIS'))
+df_input["persona"] = df_input["persona"].astype(str).progress_map(lambda x:x.encode('shift_JIS',errors='ignore').decode('shift_JIS'))
+df_input["parent_persona"] = df_input["parent_persona"].astype(str).progress_map(lambda x:x.encode('shift_JIS',errors='ignore').decode('shift_JIS'))
 
 df_input["body"] = df_input["body"].str.replace("&gt;|\\.|\\\\.","")
 df_input["parent_body"] = df_input["parent_body"].str.replace("&gt;|\\.|\\\\.","")
@@ -102,7 +102,7 @@ df_input["parent_persona"] = [ast.literal_eval(d) for d in df_input["parent_pers
 df_input.head(5)
 
 
-# In[307]:
+# In[315]:
 
 
 def create_json(row):
@@ -125,7 +125,7 @@ def create_json(row):
     }
 
 
-# In[308]:
+# In[316]:
 
 
 df_input["body"] = df_input["body"].progress_apply(lambda x: [x])
@@ -133,7 +133,7 @@ df_input["json"] = df_input.progress_apply(create_json, axis=1)
 df_input.head(5)
 
 
-# In[309]:
+# In[317]:
 
 
 list_json = df_input["json"].tolist()
@@ -142,7 +142,7 @@ with open(f"./outputs/test_data.json", "wt", encoding="utf-8") as file:
         file.write(str(json.dumps(dic))+"\n")
 
 
-# In[310]:
+# In[318]:
 
 
 import subprocess
