@@ -47,7 +47,7 @@
 
 # # Constant Value
 
-# In[172]:
+# In[272]:
 
 
 NPARTITIONS = 1000
@@ -57,7 +57,7 @@ SCHEDULER = "threads"
 
 # # Imports
 
-# In[173]:
+# In[273]:
 
 
 import pandas as pd 
@@ -73,7 +73,7 @@ import ast
 #import neuralcoref
 
 
-# In[174]:
+# In[274]:
 
 
 tqdm.pandas()
@@ -82,19 +82,32 @@ nlp = spacy.load('en_core_web_sm')
 #neuralcoref.add_to_pipe(nlp)
 
 
-# In[184]:
+# In[ ]:
+
+
+
+
+
+# In[277]:
 
 
 df_input = pd.read_csv(INPUT_PATH)
-df_input["body"] = df_input["body"].str.replace(r"&gt;|\\n|\\t|\\\\n|\\u","")
-df_input["parent_body"] = df_input["parent_body"].str.replace(r"&gt;|\\n|\\t|\\\\n|\\u","")
-df_input["persona"] = df_input["persona"].str.replace(r"&gt;|\\n|\\t|\\\\n|\\u","")
-df_input["parent_persona"] = df_input["parent_persona"].str.replace(r"&gt;|\\n|\\t|\\\\n|\\u","")
+df_input["body"] = df_input["body"].progress_map(lambda x:x.encode().decode("unicode-escape"))
+df_input["parent_body"] = df_input["parent_body"].progress_map(lambda x:x.encode().decode("unicode-escape"))
+df_input["persona"] = df_input["persona"].progress_map(lambda x:x.encode().decode("unicode-escape"))
+df_input["parent_persona"] = df_input["parent_persona"].progress_map(lambda x:x.encode().decode("unicode-escape"))
+df_input["body"] = df_input["body"].str.replace("&gt;|\\n|\\t|\\\\n|\\r|\\r\\r|\\","")
+df_input["parent_body"] = df_input["parent_body"].str.replace("&gt;|\\n|\\t|\\\\n|\\r|\\r\\r","")
+df_input["persona"] = df_input["persona"].str.replace("&gt;|\\n|\\t|\\\\n|\\r|\\r\\r","")
+df_input["parent_persona"] = df_input["parent_persona"].str.replace("&gt;|\\n|\\t|\\\\n|\\r|\\r\\r","")
 df_input["body"] = [ast.literal_eval(d) for d in df_input["body"]]
+df_input["parent_body"] = [ast.literal_eval(d) for d in df_input["parent_body"]]
+df_input["persona"] = [ast.literal_eval(d) for d in df_input["persona"]]
+df_input["parent_persona"] = [ast.literal_eval(d) for d in df_input["parent_persona"]]
 df_input.head(5)
 
 
-# In[176]:
+# In[ ]:
 
 
 def create_json(row):
@@ -117,7 +130,7 @@ def create_json(row):
     }
 
 
-# In[177]:
+# In[ ]:
 
 
 df_input["body"] = df_input["body"].progress_apply(lambda x: [x])
@@ -125,7 +138,7 @@ df_input["json"] = df_input.progress_apply(create_json, axis=1)
 df_input.head(5)
 
 
-# In[178]:
+# In[ ]:
 
 
 list_json = df_input["json"].tolist()
@@ -134,7 +147,7 @@ with open(f"./outputs/test_data.json", "wt", encoding="utf-8") as file:
         file.write(str(json.dumps(dic))+"\n")
 
 
-# In[179]:
+# In[ ]:
 
 
 import subprocess
