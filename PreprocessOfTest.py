@@ -47,7 +47,7 @@
 
 # # Constant Value
 
-# In[44]:
+# In[131]:
 
 
 NPARTITIONS = 1000
@@ -57,7 +57,7 @@ SCHEDULER = "threads"
 
 # # Imports
 
-# In[64]:
+# In[132]:
 
 
 import pandas as pd 
@@ -73,7 +73,7 @@ import ast
 #import neuralcoref
 
 
-# In[46]:
+# In[133]:
 
 
 tqdm.pandas()
@@ -82,14 +82,19 @@ nlp = spacy.load('en_core_web_sm')
 #neuralcoref.add_to_pipe(nlp)
 
 
-# In[56]:
+# In[139]:
 
 
 df_input = pd.read_csv(INPUT_PATH)
+df_input["body"] = df_input["body"].str.replace("&gt;|\n|\\n|\t|\u","")
+df_input["parent_body"] = df_input["parent_body"].str.replace("&gt;|\n|\\n|\t|\u","")
+df_input["persona"] = df_input["persona"].str.replace("&gt;|\n|\\n|\t|\u","")
+df_input["parent_persona"] = df_input["parent_persona"].str.replace("&gt;|\n|\\n|\t|\u","")
+df_input["body"] = [ast.literal_eval(d) for d in df_input["body"]]
 df_input.head(5)
 
 
-# In[48]:
+# In[135]:
 
 
 def create_json(row):
@@ -112,14 +117,7 @@ def create_json(row):
     }
 
 
-# In[66]:
-
-
-df_input["body"] = [ast.literal_eval(d) for d in df_input["body"]]
-df_input
-
-
-# In[67]:
+# In[136]:
 
 
 df_input["body"] = df_input["body"].progress_apply(lambda x: [x])
@@ -127,7 +125,7 @@ df_input["json"] = df_input.progress_apply(create_json, axis=1)
 df_input.head(5)
 
 
-# In[68]:
+# In[137]:
 
 
 list_json = df_input["json"].tolist()
@@ -136,7 +134,7 @@ with open(f"./outputs/test_data.json", "wt", encoding="utf-8") as file:
         file.write(str(json.dumps(dic))+"\n")
 
 
-# In[51]:
+# In[138]:
 
 
 import subprocess
