@@ -38,7 +38,7 @@
 
 # # Constant Value
 
-# In[245]:
+# In[334]:
 
 
 NPARTITIONS = 1000
@@ -48,7 +48,7 @@ SCHEDULER = "threads"
 
 # # Imports
 
-# In[246]:
+# In[335]:
 
 
 import pandas as pd 
@@ -64,7 +64,7 @@ import redditcleaner
 import neuralcoref
 
 
-# In[247]:
+# In[336]:
 
 
 tqdm.pandas()
@@ -76,14 +76,14 @@ neuralcoref.add_to_pipe(nlp)
 #print(doc1._.coref_resolved)
 
 
-# In[248]:
+# In[337]:
 
 
 if(not os.path.exists("./outputs")):
     os.makedirs("./outputs/")
 
 
-# In[249]:
+# In[338]:
 
 
 version = len([f for f in os.listdir("./outputs") if "persona" in f])
@@ -92,7 +92,7 @@ version
 
 # # reddit_data下の全てのjsonファイルを読み込む
 
-# In[266]:
+# In[339]:
 
 
 list_bz2_file = glob.glob(PATH)
@@ -100,7 +100,7 @@ list_reddit_conversation = []
 list_bz2_file
 
 
-# In[267]:
+# In[340]:
 
 
 print("----------read input json files----------")
@@ -111,42 +111,29 @@ for i in tqdm(range(0,len(list_bz2_file))):
             list_reddit_conversation.append(dic)
 
 
-# In[268]:
+# In[341]:
 
 
 df_reddit_conversation = pd.DataFrame(list_reddit_conversation)
 df_reddit_conversation = df_reddit_conversation[df_reddit_conversation["author"]!="[deleted]"]
 df_reddit_conversation["body"] = df_reddit_conversation["body"].progress_map(lambda x:redditcleaner.clean(str(x)))
 df_reddit_conversation["body"] = df_reddit_conversation["body"].replace(["&lt","&gt","&amp"],["","",""])
+df_reddit_conversation["body"] = df_reddit_conversation["body"].replace(["\\n+","\\r+","////","”","’"],["","","","",""], regex=True)
 df_reddit_conversation.to_csv(f"./outputs/AllConversation{version}.csv")
 df_reddit_conversation.head(5)
 
 
-# In[ ]:
+# In[353]:
 
 
-body="Hmm, ok.\n\nBBC news posted Dec 29, 15:17 GMT.\n\nshabby47 posted his answer \u20192 days ago.\u2019\n\n"
-
-
-# In[ ]:
-
-
-redditcleaner.clean(body)
-
-
-# In[ ]:
-
-
-df_reddit_conversation[df_reddit_conversation["body"].str.contains("Hmm, ok.")]["body"]
+df_reddit_conversation[df_reddit_conversation["body"].str.contains("”")]
 
 
 # # 会話ペアの作成
 
-# In[271]:
+# In[342]:
 
 
-df_reddit_conversation = pd.DataFrame(list_reddit_conversation)
-df_reddit_conversation = df_reddit_conversation[df_reddit_conversation["body"]!="[deleted]"]
 df_reddit_conversation["removed_prefix_parent_id"] = df_reddit_conversation["parent_id"].str.replace("t\d_","")
 df_reddit_conversation["parent_body"] = df_reddit_conversation[df_reddit_conversation["removed_prefix_parent_id"]==df_reddit_conversation["id"]]["body"]
 df_reddit_conversation["body"] = df_reddit_conversation["body"].str.replace('\"','’')
@@ -159,7 +146,7 @@ df_reddit_conversation = df_reddit_conversation[["body","parent_body","original_
 df_reddit_conversation
 
 
-# In[272]:
+# In[343]:
 
 
 def CreatePersona(body: str):
@@ -169,7 +156,7 @@ def CreatePersona(body: str):
     return persona
 
 
-# In[273]:
+# In[344]:
 
 
 def IsPersona(sentence: str):
@@ -186,7 +173,7 @@ def IsPersona(sentence: str):
     )
 
 
-# In[274]:
+# In[345]:
 
 
 def create_json(row):
@@ -206,7 +193,7 @@ def create_json(row):
 
 # # ペルソナの作成
 
-# In[276]:
+# In[346]:
 
 
 print("----------create conversation pair ----------")
@@ -219,7 +206,7 @@ ddf_reddit_conversation.query("persona.notnull() | parent_persona.notnull()")
 df_reddit_conversation = ddf_reddit_conversation.compute(scheduler=SCHEDULER)
 
 
-# In[ ]:
+# In[347]:
 
 
 print("--------- create list ----------")
@@ -231,7 +218,7 @@ df_reddit_conversation
 
 # # Json形式の作成
 
-# In[ ]:
+# In[348]:
 
 
 df_reddit_conversation["json"] = df_reddit_conversation.progress_apply(create_json, axis=1)
@@ -240,13 +227,13 @@ df_reddit_conversation
 
 # # Outputs
 
-# In[ ]:
+# In[349]:
 
 
 df_reddit_conversation.to_csv(f"./outputs/persona{version}.csv")
 
 
-# In[ ]:
+# In[350]:
 
 
 list_json = df_reddit_conversation["json"].tolist()
@@ -255,7 +242,7 @@ with open(f"./outputs/created_dialogues{version}.json", "wt", encoding="utf-8") 
         file.write(str(json.dumps(dic))+"\n")
 
 
-# In[ ]:
+# In[351]:
 
 
 import subprocess
