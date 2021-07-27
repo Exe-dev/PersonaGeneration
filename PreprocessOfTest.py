@@ -47,7 +47,7 @@
 
 # # Constant Value
 
-# In[311]:
+# In[320]:
 
 
 NPARTITIONS = 1000
@@ -57,7 +57,7 @@ SCHEDULER = "threads"
 
 # # Imports
 
-# In[312]:
+# In[321]:
 
 
 import pandas as pd 
@@ -73,7 +73,7 @@ import ast
 #import neuralcoref
 
 
-# In[313]:
+# In[322]:
 
 
 tqdm.pandas()
@@ -82,19 +82,10 @@ nlp = spacy.load('en_core_web_sm')
 #neuralcoref.add_to_pipe(nlp)
 
 
-# In[319]:
+# In[323]:
 
 
 df_input = pd.read_csv(INPUT_PATH)
-df_input["body"] = df_input["body"].progress_map(lambda x:x.encode('shift_JIS',errors='ignore').decode('shift_JIS'))
-df_input["parent_body"] = df_input["parent_body"].progress_map(lambda x:x.encode('shift_JIS',errors='ignore').decode('shift_JIS'))
-df_input["persona"] = df_input["persona"].astype(str).progress_map(lambda x:x.encode('shift_JIS',errors='ignore').decode('shift_JIS'))
-df_input["parent_persona"] = df_input["parent_persona"].astype(str).progress_map(lambda x:x.encode('shift_JIS',errors='ignore').decode('shift_JIS'))
-
-df_input["body"] = df_input["body"].str.replace("&gt;|\\.|\\\\.","")
-df_input["parent_body"] = df_input["parent_body"].str.replace("&gt;|\\.|\\\\.","")
-df_input["persona"] = df_input["persona"].str.replace("&gt;|\\.|\\\\.","")
-df_input["parent_persona"] = df_input["parent_persona"].str.replace("&gt;|\\.|\\\\.","")
 df_input["body"] = [ast.literal_eval(d) for d in df_input["body"]]
 df_input["parent_body"] = [ast.literal_eval(d) for d in df_input["parent_body"]]
 df_input["persona"] = [ast.literal_eval(d) for d in df_input["persona"]]
@@ -102,7 +93,7 @@ df_input["parent_persona"] = [ast.literal_eval(d) for d in df_input["parent_pers
 df_input.head(5)
 
 
-# In[315]:
+# In[324]:
 
 
 def create_json(row):
@@ -125,7 +116,7 @@ def create_json(row):
     }
 
 
-# In[316]:
+# In[325]:
 
 
 df_input["body"] = df_input["body"].progress_apply(lambda x: [x])
@@ -133,7 +124,7 @@ df_input["json"] = df_input.progress_apply(create_json, axis=1)
 df_input.head(5)
 
 
-# In[317]:
+# In[326]:
 
 
 list_json = df_input["json"].tolist()
@@ -142,7 +133,7 @@ with open(f"./outputs/test_data.json", "wt", encoding="utf-8") as file:
         file.write(str(json.dumps(dic))+"\n")
 
 
-# In[318]:
+# In[327]:
 
 
 import subprocess

@@ -2,6 +2,11 @@
 
 This repository provides the data process scripts.
 
+
+## Installation
+```
+pip install -r requirements.txt
+```
 ## 1.Data Preparation
 Before running, you should download Reddit datasets.
 Link:

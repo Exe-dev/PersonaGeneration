@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # Rules of persona
-# + Each sentence must contain between 4 and 20 words or punctuation marks.
-# + It contains either the word I or my.
+# # Rules of persona
+# + Each sentence must contain between 4 and 20 words or punctuation marks.
+# + It contains either the word I or my.
 # + At least one verb, and (iv) at least one noun, pronoun or adjective.
 
 # # Example Dialogue with persona
@@ -11,16 +11,34 @@
 # - Context: “I love running.”
 # - Response: “Me too! But only on weekends.”
 
-# {"dialog": [["没有 钱   万万 不行 ！ ~"], ["现实 就是 如此"]], "profile": [{"tag": ["漫画;旅遊;星座"], "loc": "广东 广州", "gender": "male"}, {"tag": [""], "loc": "", "gender": ""}], "uid": [0, 1]}
+# {
+#     
+#     "dialog": [["没有 钱   万万 不行 ！ ~"], ["现实 就是 如此"]], 
+#     
+#     "profile": [{"tag": ["漫画;旅遊;星座"], "loc": "广东 广州", "gender": "male"}, {"tag": [""], "loc": "", "gender": ""}], 
+#     
+#     "uid": [0, 1]
+# 
+# }
 
-# {'dialog': ["For what it's worth, I don't have a problem with it.", 'My apologies.  I did not have any problems with it, but I will be more careful in the future.'], 'profile': [{'tag': ["for what it's worth, i don't have a problem with it."], 'loc': '', 'gender': ''}, {'tag': [' i did not have any problems with it, but i will be more careful in the future.'], 'loc': '', 'gender': ''}], 'uid': [0, 1]}
+# {
+#     
+#     "dialog": [["For what it's worth, I don't have a problem with it."], ["My apologies.  I did not have any problems with it, but I will be more careful in the future."]], 
+#     
+#     "profile": [{"tag": [], "loc": "", "gender": ""}, {"tag": ["i did not have any problems with it, but i will be more careful in the future."], 
+#     
+#     "loc": "", "gender": ""}], 
+#     
+#     "uid": [0, 1]
+# 
+# }
 
 # # test_data Example
 # {"uid": [0, 1, 2], "dialog": [["剧烈运动 是 吧"], ["各种 剧烈运动"], ["... 姐 最近 有点 寂寞 过头 了 ..."]], "responder_profile": {"loc": "海南", "gender": "female", "tag": "美食;宅;80后"}, "profile": [{"loc": "天津 滨海新区", "gender": "male", "tag": ""}, {"loc": "海南", "gender": "female", "tag": "美食;宅;80后"}, {"loc": "安徽 合肥", "gender": "male", "tag": "游戏动漫;双子座;宅;音乐;90后;WOW台服众"}], "golden_response": ["可不是 ， 我 又 不 像 你 ， 有 女神 。"]}
 
 # # Constant Value
 
-# In[94]:
+# In[245]:
 
 
 NPARTITIONS = 1000
@@ -30,7 +48,7 @@ SCHEDULER = "threads"
 
 # # Imports
 
-# In[95]:
+# In[246]:
 
 
 import pandas as pd 
@@ -42,26 +60,30 @@ import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
 import spacy
 import os
-#import neuralcoref
+import redditcleaner
+import neuralcoref
 
 
-# In[96]:
+# In[247]:
 
 
 tqdm.pandas()
 ProgressBar().register()
 nlp = spacy.load('en_core_web_sm')
-#neuralcoref.add_to_pipe(nlp)
+neuralcoref.add_to_pipe(nlp)
+
+#doc1 = nlp('My sister has a dog. She loves him.')
+#print(doc1._.coref_resolved)
 
 
-# In[97]:
+# In[248]:
 
 
 if(not os.path.exists("./outputs")):
     os.makedirs("./outputs/")
 
 
-# In[98]:
+# In[249]:
 
 
 version = len([f for f in os.listdir("./outputs") if "persona" in f])
@@ -70,7 +92,7 @@ version
 
 # # reddit_data下の全てのjsonファイルを読み込む
 
-# In[99]:
+# In[266]:
 
 
 list_bz2_file = glob.glob(PATH)
@@ -78,33 +100,53 @@ list_reddit_conversation = []
 list_bz2_file
 
 
-# In[100]:
+# In[267]:
 
 
 print("----------read input json files----------")
 for i in tqdm(range(0,len(list_bz2_file))):
-    with open(list_bz2_file[i]) as f:
+    with open(list_bz2_file[i], mode="r", encoding="shift-jis") as f:
         for line in f.readlines():
             dic=json.loads(line)
             list_reddit_conversation.append(dic)
 
 
-# In[101]:
+# In[268]:
 
 
 df_reddit_conversation = pd.DataFrame(list_reddit_conversation)
+df_reddit_conversation = df_reddit_conversation[df_reddit_conversation["author"]!="[deleted]"]
+df_reddit_conversation["body"] = df_reddit_conversation["body"].progress_map(lambda x:redditcleaner.clean(str(x)))
+df_reddit_conversation["body"] = df_reddit_conversation["body"].replace(["&lt","&gt","&amp"],["","",""])
 df_reddit_conversation.to_csv(f"./outputs/AllConversation{version}.csv")
-df_reddit_conversation
+df_reddit_conversation.head(5)
+
+
+# In[ ]:
+
+
+body="Hmm, ok.\n\nBBC news posted Dec 29, 15:17 GMT.\n\nshabby47 posted his answer \u20192 days ago.\u2019\n\n"
+
+
+# In[ ]:
+
+
+redditcleaner.clean(body)
+
+
+# In[ ]:
+
+
+df_reddit_conversation[df_reddit_conversation["body"].str.contains("Hmm, ok.")]["body"]
 
 
 # # 会話ペアの作成
 
-# In[102]:
+# In[271]:
 
 
 df_reddit_conversation = pd.DataFrame(list_reddit_conversation)
 df_reddit_conversation = df_reddit_conversation[df_reddit_conversation["body"]!="[deleted]"]
-df_reddit_conversation["body"] = df_reddit_conversation["body"].replace(["&lt","&gt","&amp"],["","",""])
 df_reddit_conversation["removed_prefix_parent_id"] = df_reddit_conversation["parent_id"].str.replace("t\d_","")
 df_reddit_conversation["parent_body"] = df_reddit_conversation[df_reddit_conversation["removed_prefix_parent_id"]==df_reddit_conversation["id"]]["body"]
 df_reddit_conversation["body"] = df_reddit_conversation["body"].str.replace('\"','’')
@@ -117,7 +159,7 @@ df_reddit_conversation = df_reddit_conversation[["body","parent_body","original_
 df_reddit_conversation
 
 
-# In[103]:
+# In[272]:
 
 
 def CreatePersona(body: str):
@@ -127,7 +169,7 @@ def CreatePersona(body: str):
     return persona
 
 
-# In[104]:
+# In[273]:
 
 
 def IsPersona(sentence: str):
@@ -144,7 +186,7 @@ def IsPersona(sentence: str):
     )
 
 
-# In[105]:
+# In[274]:
 
 
 def create_json(row):
@@ -162,33 +204,25 @@ def create_json(row):
     }
 
 
-# In[106]:
-
-
-def reference_resolution(sentence):
-    return nlp(sentence)._.coref_resolved
-
-
 # # ペルソナの作成
 
-# In[107]:
+# In[276]:
 
 
 print("----------create conversation pair ----------")
 ddf_reddit_conversation = dd.from_pandas(data=df_reddit_conversation, npartitions=NPARTITIONS)
 ddf_reddit_conversation["persona"] = ddf_reddit_conversation["original_body"].map(CreatePersona)
 ddf_reddit_conversation["parent_persona"] = ddf_reddit_conversation["original_parent_body"].map(CreatePersona)
-ddf_reddit_conversation = ddf_reddit_conversation.query("persona.notnull() & parent_persona.notnull()")
-#ddf_reddit_conversation["body"] = ddf_reddit_conversation["body"].map(reference_resolution)
-#ddf_reddit_conversation["parent_body"] = ddf_reddit_conversation["parent_body"].map(reference_resolution)
+ddf_reddit_conversation.query("persona.notnull() | parent_persona.notnull()")
+#ddf_reddit_conversation["body"] = ddf_reddit_conversation["body"].map(lambda sentence:nlp(sentence)._.coref_resolved)
+#ddf_reddit_conversation["parent_body"] = ddf_reddit_conversation["parent_body"].map(lambda sentence:nlp(sentence)._.coref_resolved)
 df_reddit_conversation = ddf_reddit_conversation.compute(scheduler=SCHEDULER)
 
 
-# In[108]:
+# In[ ]:
 
 
-print("----------create persona ----------")
-df_reddit_conversation = df_reddit_conversation[(df_reddit_conversation.astype(str)["persona"] !="[]")|(df_reddit_conversation.astype(str)["parent_persona"] !="[]")].reset_index(drop=True)
+print("--------- create list ----------")
 df_reddit_conversation["body"] = df_reddit_conversation["body"].progress_map(lambda x: [x] )
 df_reddit_conversation["parent_body"] = df_reddit_conversation["parent_body"].progress_map(lambda x: [x] )
 df_reddit_conversation["dialog"] = [list(x) for x in zip(df_reddit_conversation["body"].tolist(),df_reddit_conversation["parent_body"].tolist())]
@@ -197,7 +231,7 @@ df_reddit_conversation
 
 # # Json形式の作成
 
-# In[109]:
+# In[ ]:
 
 
 df_reddit_conversation["json"] = df_reddit_conversation.progress_apply(create_json, axis=1)
@@ -206,22 +240,22 @@ df_reddit_conversation
 
 # # Outputs
 
-# In[110]:
+# In[ ]:
 
 
 df_reddit_conversation.to_csv(f"./outputs/persona{version}.csv")
 
 
-# In[111]:
+# In[ ]:
 
 
 list_json = df_reddit_conversation["json"].tolist()
-with open(f"created_dialogues{version}.json", "wt", encoding="utf-8") as file:
+with open(f"./outputs/created_dialogues{version}.json", "wt", encoding="utf-8") as file:
     for dic in list_json:
         file.write(str(json.dumps(dic))+"\n")
 
 
-# In[112]:
+# In[ ]:
 
 
 import subprocess
