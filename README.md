@@ -31,6 +31,7 @@ Default output path is ./outputs/.
 | --input_json              | ./reddit_data/*/*.json | Input json path |
 | --output_path             | ./output      | Output file path |
 | --scheduler               | threads       | Selecting Threads, Processes, or Single Threaded |
+
 Example Command
 ```
 python .\PersonaGeneration.py --npartitions 100 --input_json .\reddit_data/*.json --output_path ./train --scheduler Processes
