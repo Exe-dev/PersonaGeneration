@@ -38,7 +38,7 @@
 
 # # Imports
 
-# In[62]:
+# In[ ]:
 
 
 import argparse
@@ -53,12 +53,12 @@ from dask.diagnostics import ProgressBar
 import spacy
 import os
 import redditcleaner
-#import neuralcoref
+import neuralcoref
 
 
 # # Command Parser
 
-# In[63]:
+# In[ ]:
 
 
 parser = argparse.ArgumentParser(description="preprocess of train data")
@@ -74,7 +74,7 @@ else:
 
 # # Constant
 
-# In[64]:
+# In[ ]:
 
 
 NPARTITIONS = args.npartitions
@@ -85,7 +85,7 @@ SCHEDULER = args.scheduler
 
 # # Setup
 
-# In[65]:
+# In[ ]:
 
 
 tqdm.pandas()
@@ -97,14 +97,14 @@ neuralcoref.add_to_pipe(nlp)
 #print(doc1._.coref_resolved)
 
 
-# In[66]:
+# In[ ]:
 
 
 if(not os.path.exists(OUTPUT_PATH)):
     os.makedirs(OUTPUT_PATH)
 
 
-# In[67]:
+# In[ ]:
 
 
 version = len([f for f in os.listdir(OUTPUT_PATH) if "persona" in f])
@@ -113,7 +113,7 @@ version
 
 # # reddit_data下の全てのjsonファイルを読み込む
 
-# In[68]:
+# In[ ]:
 
 
 list_bz2_file = glob.glob(INPUT_JSON)
@@ -121,7 +121,7 @@ list_reddit_conversation = []
 list_bz2_file
 
 
-# In[69]:
+# In[ ]:
 
 
 print("----------read input json files----------")
@@ -132,7 +132,7 @@ for i in tqdm(range(0,len(list_bz2_file))):
             list_reddit_conversation.append(dic)
 
 
-# In[70]:
+# In[ ]:
 
 
 df_reddit_conversation = pd.DataFrame(list_reddit_conversation)
@@ -144,13 +144,13 @@ df_reddit_conversation.to_csv(f"{OUTPUT_PATH}/AllConversation{version}.csv")
 df_reddit_conversation.head(5)
 
 
-# In[71]:
+# In[ ]:
 
 
 df_reddit_conversation[df_reddit_conversation["body"].str.contains("There's something called an")]
 
 
-# In[72]:
+# In[ ]:
 
 
 print(df_reddit_conversation[df_reddit_conversation["id"]=="c029e0e"]["body"])
@@ -158,7 +158,7 @@ print(df_reddit_conversation[df_reddit_conversation["id"]=="c029e0e"]["body"])
 
 # # 会話ペアの作成
 
-# In[73]:
+# In[ ]:
 
 
 df_reddit_conversation["removed_prefix_parent_id"] = df_reddit_conversation["parent_id"].str.replace("t\d_","")
@@ -173,7 +173,7 @@ df_reddit_conversation = df_reddit_conversation[["body","parent_body","original_
 df_reddit_conversation
 
 
-# In[74]:
+# In[ ]:
 
 
 def CreatePersona(body: str):
@@ -183,7 +183,7 @@ def CreatePersona(body: str):
     return persona
 
 
-# In[75]:
+# In[ ]:
 
 
 def IsPersona(sentence: str):
@@ -200,7 +200,7 @@ def IsPersona(sentence: str):
     )
 
 
-# In[76]:
+# In[ ]:
 
 
 def create_json(row):
@@ -220,7 +220,7 @@ def create_json(row):
 
 # # ペルソナの作成
 
-# In[77]:
+# In[ ]:
 
 
 print("----------create conversation pair ----------")
@@ -269,7 +269,7 @@ with open(f"{OUTPUT_PATH}/created_dialogues{version}.json", "wt", encoding="utf-
         file.write(str(json.dumps(dic))+"\n")
 
 
-# In[79]:
+# In[81]:
 
 
 import subprocess
