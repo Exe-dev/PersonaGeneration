@@ -34,7 +34,7 @@ Default output path is ./outputs/.
 
 Example Command
 ```
-python .\PersonaGeneration.py --npartitions 100 --input_json .\reddit_data/*.json --output_path ./train --scheduler Processes
+python .\PersonaGeneration.py --npartitions 100 --input_json ./reddit_data/*.json --output_path ./train --scheduler Processes
 ```
 
 * **test data processing ** 
