@@ -36,21 +36,13 @@
 # # test_data Example
 # {"uid": [0, 1, 2], "dialog": [["剧烈运动 是 吧"], ["各种 剧烈运动"], ["... 姐 最近 有点 寂寞 过头 了 ..."]], "responder_profile": {"loc": "海南", "gender": "female", "tag": "美食;宅;80后"}, "profile": [{"loc": "天津 滨海新区", "gender": "male", "tag": ""}, {"loc": "海南", "gender": "female", "tag": "美食;宅;80后"}, {"loc": "安徽 合肥", "gender": "male", "tag": "游戏动漫;双子座;宅;音乐;90后;WOW台服众"}], "golden_response": ["可不是 ， 我 又 不 像 你 ， 有 女神 。"]}
 
-# # Constant Value
-
-# In[587]:
-
-
-NPARTITIONS = 10
-PATH = "./reddit_data/*/*.json"
-SCHEDULER = "threads"
-
-
 # # Imports
 
-# In[588]:
+# In[62]:
 
 
+import argparse
+import sys
 import pandas as pd 
 import json
 import bz2
@@ -64,9 +56,36 @@ import redditcleaner
 import neuralcoref
 
 
+# # Command Parser
+
+# In[63]:
+
+
+parser = argparse.ArgumentParser(description="preprocess of train data")
+parser.add_argument("--npartitions", dest="npartitions", type=int, default=10,help="Return number of partitions")
+parser.add_argument("--input_json", dest="input_json", type=str, default="./reddit_data/*/*.json" ,help="Input json path")
+parser.add_argument("--output_path", dest="output_path", type=str, default="./outputs" ,help="Output file path")
+parser.add_argument("--scheduler", dest="scheduler", type=str, default="threads" ,help="Selecting Threads, Processes, or Single Threaded")
+if "ipykernel" in sys.modules:
+    args = parser.parse_args(args=[])
+else:
+    args = parser.parse_args()
+
+
+# # Constant
+
+# In[64]:
+
+
+NPARTITIONS = args.npartitions
+INPUT_JSON = args.input_json
+OUTPUT_PATH = args.output_path
+SCHEDULER = args.scheduler
+
+
 # # Setup
 
-# In[589]:
+# In[65]:
 
 
 tqdm.pandas()
@@ -78,31 +97,31 @@ neuralcoref.add_to_pipe(nlp)
 #print(doc1._.coref_resolved)
 
 
-# In[590]:
+# In[66]:
 
 
-if(not os.path.exists("./outputs")):
-    os.makedirs("./outputs/")
+if(not os.path.exists(OUTPUT_PATH)):
+    os.makedirs(OUTPUT_PATH)
 
 
-# In[591]:
+# In[67]:
 
 
-version = len([f for f in os.listdir("./outputs") if "persona" in f])
+version = len([f for f in os.listdir(OUTPUT_PATH) if "persona" in f])
 version
 
 
 # # reddit_data下の全てのjsonファイルを読み込む
 
-# In[592]:
+# In[68]:
 
 
-list_bz2_file = glob.glob(PATH)
+list_bz2_file = glob.glob(INPUT_JSON)
 list_reddit_conversation = []
 list_bz2_file
 
 
-# In[593]:
+# In[69]:
 
 
 print("----------read input json files----------")
@@ -113,7 +132,7 @@ for i in tqdm(range(0,len(list_bz2_file))):
             list_reddit_conversation.append(dic)
 
 
-# In[594]:
+# In[70]:
 
 
 df_reddit_conversation = pd.DataFrame(list_reddit_conversation)
@@ -121,13 +140,25 @@ df_reddit_conversation = df_reddit_conversation[df_reddit_conversation["author"]
 df_reddit_conversation["body"] = df_reddit_conversation["body"].progress_map(lambda x:redditcleaner.clean(str(x)))
 df_reddit_conversation["body"] = df_reddit_conversation["body"].replace(["&lt","&gt","&amp"],["","",""])
 df_reddit_conversation["body"] = df_reddit_conversation["body"].replace(["\\n+","\\r","\\\\","”","’"],["","","","",""], regex=True)
-#df_reddit_conversation.to_csv(f"./outputs/AllConversation{version}.csv")
+df_reddit_conversation.to_csv(f"{OUTPUT_PATH}/AllConversation{version}.csv")
 df_reddit_conversation.head(5)
+
+
+# In[71]:
+
+
+df_reddit_conversation[df_reddit_conversation["body"].str.contains("There's something called an")]
+
+
+# In[72]:
+
+
+print(df_reddit_conversation[df_reddit_conversation["id"]=="c029e0e"]["body"])
 
 
 # # 会話ペアの作成
 
-# In[595]:
+# In[73]:
 
 
 df_reddit_conversation["removed_prefix_parent_id"] = df_reddit_conversation["parent_id"].str.replace("t\d_","")
@@ -142,7 +173,7 @@ df_reddit_conversation = df_reddit_conversation[["body","parent_body","original_
 df_reddit_conversation
 
 
-# In[596]:
+# In[74]:
 
 
 def CreatePersona(body: str):
@@ -152,7 +183,7 @@ def CreatePersona(body: str):
     return persona
 
 
-# In[597]:
+# In[75]:
 
 
 def IsPersona(sentence: str):
@@ -169,7 +200,7 @@ def IsPersona(sentence: str):
     )
 
 
-# In[598]:
+# In[76]:
 
 
 def create_json(row):
@@ -189,7 +220,7 @@ def create_json(row):
 
 # # ペルソナの作成
 
-# In[599]:
+# In[77]:
 
 
 print("----------create conversation pair ----------")
@@ -226,19 +257,19 @@ df_reddit_conversation
 # In[ ]:
 
 
-df_reddit_conversation.to_csv(f"./outputs/persona{version}.csv")
+df_reddit_conversation.to_csv(f"{OUTPUT_PATH}/persona{version}.csv")
 
 
 # In[ ]:
 
 
 list_json = df_reddit_conversation["json"].tolist()
-with open(f"./outputs/created_dialogues{version}.json", "wt", encoding="utf-8") as file:
+with open(f"{OUTPUT_PATH}/created_dialogues{version}.json", "wt", encoding="utf-8") as file:
     for dic in list_json:
         file.write(str(json.dumps(dic))+"\n")
 
 
-# In[ ]:
+# In[78]:
 
 
 import subprocess

@@ -19,12 +19,22 @@ You can use which you like.
 
 * **training data processing**
 ```
-python PersonaGeneration.py
+python .\PersonaGeneration.py 
 ```
 Default input path is ./reddit_data/*/*.json
 If you wanna change input file path, you can change INPUT_PATH.
 Default output path is ./outputs/.
 
+| Parameter                 | Default       | Description   |	
+| :------------------------ |:-------------:| :-------------|
+| --npartitions             | 10            | Number of partitions |
+| --input_json              | ./reddit_data/*/*.json | Input json path |
+| --output_path             | ./output      | Output file path |
+| --scheduler               | threads       | Selecting Threads, Processes, or Single Threaded |
+Example Command
+```
+python .\PersonaGeneration.py --npartitions 100 --input_json .\reddit_data/*.json --output_path ./train --scheduler Processes
+```
 
 * **test data processing ** 
 ```
