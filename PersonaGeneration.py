@@ -6,9 +6,9 @@
 # + It contains either the word I or my.
 # + At least one verb, and (iv) at least one noun, pronoun or adjective.
 
-# # Example Dialogue with persona
-# - Persona: [“I like sport”, “I work a lot”]
-# - Context: “I love running.”
+# # Example Dialogue with persona
+# - Persona: [“I like sport”, “I work a lot”]
+# - Context: “I love running.”
 # - Response: “Me too! But only on weekends.”
 
 # {
@@ -53,7 +53,7 @@ from dask.diagnostics import ProgressBar
 import spacy
 import os
 import redditcleaner
-import neuralcoref
+#import neuralcoref
 
 
 # # Command Parser
@@ -62,7 +62,7 @@ import neuralcoref
 
 
 parser = argparse.ArgumentParser(description="preprocess of train data")
-parser.add_argument("--npartitions", dest="npartitions", type=int, default=10,help="Return number of partitions")
+parser.add_argument("--npartitions", dest="npartitions", type=int, default=10,help="Number of partitions")
 parser.add_argument("--input_json", dest="input_json", type=str, default="./reddit_data/*/*.json" ,help="Input json path")
 parser.add_argument("--output_path", dest="output_path", type=str, default="./outputs" ,help="Output file path")
 parser.add_argument("--scheduler", dest="scheduler", type=str, default="threads" ,help="Selecting Threads, Processes, or Single Threaded")
@@ -269,7 +269,7 @@ with open(f"{OUTPUT_PATH}/created_dialogues{version}.json", "wt", encoding="utf-
         file.write(str(json.dumps(dic))+"\n")
 
 
-# In[78]:
+# In[79]:
 
 
 import subprocess
