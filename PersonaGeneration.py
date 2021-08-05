@@ -38,7 +38,7 @@
 
 # # Imports
 
-# In[86]:
+# In[ ]:
 
 
 import argparse
@@ -109,7 +109,7 @@ if(not os.path.exists(OUTPUT_PATH)):
 # In[ ]:
 
 
-version = len([f for f in os.listdir(OUTPUT_PATH) if "persona" in f])
+version = len([f for f in os.listdir(OUTPUT_PATH) if "ALL" in f])
 version
 
 
@@ -134,11 +134,12 @@ for i in tqdm(range(0,len(list_bz2_file))):
             list_reddit_conversation.append(dic)
 
 
-# In[ ]:
+# In[157]:
 
 
 if IS_GPU:
     import cudf
+    import dask_cudf
     df_reddit_conversation = cudf.DataFrame(list_reddit_conversation)
 else:
     df_reddit_conversation = pd.DataFrame(list_reddit_conversation)
@@ -151,21 +152,9 @@ df_reddit_conversation.to_csv(f"{OUTPUT_PATH}/AllConversation{version}.csv")
 df_reddit_conversation.head(5)
 
 
-# In[ ]:
-
-
-df_reddit_conversation[df_reddit_conversation["body"].str.contains("There's something called an")]
-
-
-# In[ ]:
-
-
-print(df_reddit_conversation[df_reddit_conversation["id"]=="c029e0e"]["body"])
-
-
 # # 会話ペアの作成
 
-# In[ ]:
+# In[158]:
 
 
 df_reddit_conversation["removed_prefix_parent_id"] = df_reddit_conversation["parent_id"].str.replace("t\d_","")
@@ -227,17 +216,23 @@ def create_json(row):
 
 # # ペルソナの作成
 
-# In[ ]:
+# In[181]:
 
 
 print("----------create conversation pair ----------")
-ddf_reddit_conversation = dd.from_pandas(data=df_reddit_conversation, npartitions=NPARTITIONS)
+if IS_GPU:
+    ddf_reddit_conversation = dask_cudf.from_cudf(data=df_reddit_conversation, npartitions=NPARTITIONS)
+else:
+    ddf_reddit_conversation = dd.from_pandas(data=df_reddit_conversation, npartitions=NPARTITIONS)
 ddf_reddit_conversation["persona"] = ddf_reddit_conversation["original_body"].map(CreatePersona)
 ddf_reddit_conversation["parent_persona"] = ddf_reddit_conversation["original_parent_body"].map(CreatePersona)
-ddf_reddit_conversation.query("persona.notnull() | parent_persona.notnull()")
-#ddf_reddit_conversation["body"] = ddf_reddit_conversation["body"].map(lambda sentence:nlp(sentence)._.coref_resolved)
-#ddf_reddit_conversation["parent_body"] = ddf_reddit_conversation["parent_body"].map(lambda sentence:nlp(sentence)._.coref_resolved)
+
+ddf_reddit_conversation = ddf_reddit_conversation[(ddf_reddit_conversation.astype(str)["persona"]!=["[]"])|(ddf_reddit_conversation.astype(str)["parent_persona"]!="[]")]
+
+ddf_reddit_conversation["body"] = ddf_reddit_conversation["body"].map(lambda sentence:nlp(sentence)._.coref_resolved)
+ddf_reddit_conversation["parent_body"] = ddf_reddit_conversation["parent_body"].map(lambda sentence:nlp(sentence)._.coref_resolved)
 df_reddit_conversation = ddf_reddit_conversation.compute(scheduler=SCHEDULER)
+df_reddit_conversation
 
 
 # In[ ]:
@@ -276,7 +271,7 @@ with open(f"{OUTPUT_PATH}/created_dialogues{version}.json", "wt", encoding="utf-
         file.write(str(json.dumps(dic))+"\n")
 
 
-# In[83]:
+# In[ ]:
 
 
 import subprocess
