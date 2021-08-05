@@ -7,6 +7,20 @@ This repository provides the data process scripts.
 ```
 pip install -r requirements.txt
 ```
+
+Option:
+If you use GPU for process, cudf is needed.
+```
+# for CUDA 11.0
+conda install -c rapidsai -c nvidia -c numba -c conda-forge \
+    cudf=21.06 python=3.7 cudatoolkit=11.0
+
+# or, for CUDA 11.2
+conda install -c rapidsai -c nvidia -c numba -c conda-forge \
+    cudf=21.06 python=3.7 cudatoolkit=11.2
+
+
+```
 ## 1.Data Preparation
 Before running, you should download Reddit datasets.
 Link:
