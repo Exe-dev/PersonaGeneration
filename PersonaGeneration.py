@@ -38,7 +38,7 @@
 
 # # Imports
 
-# In[ ]:
+# In[86]:
 
 
 import argparse
@@ -66,6 +66,7 @@ parser.add_argument("--npartitions", dest="npartitions", type=int, default=10,he
 parser.add_argument("--input_json", dest="input_json", type=str, default="./reddit_data/*/*.json" ,help="Input json path")
 parser.add_argument("--output_path", dest="output_path", type=str, default="./outputs" ,help="Output file path")
 parser.add_argument("--scheduler", dest="scheduler", type=str, default="threads" ,help="Selecting Threads, Processes, or Single Threaded")
+parser.add_argument("--is_gpu", dest="is_gpu", type=bool, default=False ,help="If you want to use gpu for processing dataframe, you set True")
 if "ipykernel" in sys.modules:
     args = parser.parse_args(args=[])
 else:
@@ -81,6 +82,7 @@ NPARTITIONS = args.npartitions
 INPUT_JSON = args.input_json
 OUTPUT_PATH = args.output_path
 SCHEDULER = args.scheduler
+IS_GPU = args.is_gpu
 
 
 # # Setup
@@ -135,7 +137,12 @@ for i in tqdm(range(0,len(list_bz2_file))):
 # In[ ]:
 
 
-df_reddit_conversation = pd.DataFrame(list_reddit_conversation)
+if IS_GPU:
+    import cudf
+    df_reddit_conversation = cudf.DataFrame(list_reddit_conversation)
+else:
+    df_reddit_conversation = pd.DataFrame(list_reddit_conversation)
+
 df_reddit_conversation = df_reddit_conversation[df_reddit_conversation["author"]!="[deleted]"]
 df_reddit_conversation["body"] = df_reddit_conversation["body"].progress_map(lambda x:redditcleaner.clean(str(x)))
 df_reddit_conversation["body"] = df_reddit_conversation["body"].replace(["&lt","&gt","&amp"],["","",""])
@@ -269,7 +276,7 @@ with open(f"{OUTPUT_PATH}/created_dialogues{version}.json", "wt", encoding="utf-
         file.write(str(json.dumps(dic))+"\n")
 
 
-# In[81]:
+# In[83]:
 
 
 import subprocess
