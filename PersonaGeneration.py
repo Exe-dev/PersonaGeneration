@@ -38,7 +38,7 @@
 
 # # Imports
 
-# In[ ]:
+# In[201]:
 
 
 import argparse
@@ -58,7 +58,7 @@ import neuralcoref
 
 # # Command Parser
 
-# In[ ]:
+# In[202]:
 
 
 parser = argparse.ArgumentParser(description="preprocess of train data")
@@ -75,7 +75,7 @@ else:
 
 # # Constant
 
-# In[ ]:
+# In[203]:
 
 
 NPARTITIONS = args.npartitions
@@ -87,7 +87,7 @@ IS_GPU = args.is_gpu
 
 # # Setup
 
-# In[ ]:
+# In[204]:
 
 
 tqdm.pandas()
@@ -99,14 +99,14 @@ neuralcoref.add_to_pipe(nlp)
 #print(doc1._.coref_resolved)
 
 
-# In[ ]:
+# In[205]:
 
 
 if(not os.path.exists(OUTPUT_PATH)):
     os.makedirs(OUTPUT_PATH)
 
 
-# In[ ]:
+# In[206]:
 
 
 version = len([f for f in os.listdir(OUTPUT_PATH) if "ALL" in f])
@@ -115,7 +115,7 @@ version
 
 # # reddit_data下の全てのjsonファイルを読み込む
 
-# In[ ]:
+# In[207]:
 
 
 list_bz2_file = glob.glob(INPUT_JSON)
@@ -123,7 +123,7 @@ list_reddit_conversation = []
 list_bz2_file
 
 
-# In[ ]:
+# In[208]:
 
 
 print("----------read input json files----------")
@@ -134,7 +134,7 @@ for i in tqdm(range(0,len(list_bz2_file))):
             list_reddit_conversation.append(dic)
 
 
-# In[157]:
+# In[209]:
 
 
 if IS_GPU:
@@ -154,7 +154,7 @@ df_reddit_conversation.head(5)
 
 # # 会話ペアの作成
 
-# In[158]:
+# In[210]:
 
 
 df_reddit_conversation["removed_prefix_parent_id"] = df_reddit_conversation["parent_id"].str.replace("t\d_","")
@@ -169,7 +169,7 @@ df_reddit_conversation = df_reddit_conversation[["body","parent_body","original_
 df_reddit_conversation
 
 
-# In[ ]:
+# In[211]:
 
 
 def CreatePersona(body: str):
@@ -179,7 +179,7 @@ def CreatePersona(body: str):
     return persona
 
 
-# In[ ]:
+# In[212]:
 
 
 def IsPersona(sentence: str):
@@ -196,7 +196,7 @@ def IsPersona(sentence: str):
     )
 
 
-# In[ ]:
+# In[213]:
 
 
 def create_json(row):
@@ -216,7 +216,7 @@ def create_json(row):
 
 # # ペルソナの作成
 
-# In[181]:
+# In[214]:
 
 
 print("----------create conversation pair ----------")
@@ -227,15 +227,22 @@ else:
 ddf_reddit_conversation["persona"] = ddf_reddit_conversation["original_body"].map(CreatePersona)
 ddf_reddit_conversation["parent_persona"] = ddf_reddit_conversation["original_parent_body"].map(CreatePersona)
 
-ddf_reddit_conversation = ddf_reddit_conversation[(ddf_reddit_conversation.astype(str)["persona"]!=["[]"])|(ddf_reddit_conversation.astype(str)["parent_persona"]!="[]")]
+ddf_reddit_conversation = ddf_reddit_conversation[(ddf_reddit_conversation.astype(str)["persona"]!="[]")|(ddf_reddit_conversation.astype(str)["parent_persona"]!="[]")]
 
 ddf_reddit_conversation["body"] = ddf_reddit_conversation["body"].map(lambda sentence:nlp(sentence)._.coref_resolved)
 ddf_reddit_conversation["parent_body"] = ddf_reddit_conversation["parent_body"].map(lambda sentence:nlp(sentence)._.coref_resolved)
 df_reddit_conversation = ddf_reddit_conversation.compute(scheduler=SCHEDULER)
+df_reddit_conversation = df_reddit_conversation.reset_index(drop=True)
 df_reddit_conversation
 
 
 # In[ ]:
+
+
+
+
+
+# In[215]:
 
 
 print("--------- create list ----------")
@@ -247,7 +254,7 @@ df_reddit_conversation
 
 # # Json形式の作成
 
-# In[ ]:
+# In[216]:
 
 
 df_reddit_conversation["json"] = df_reddit_conversation.progress_apply(create_json, axis=1)
@@ -256,13 +263,13 @@ df_reddit_conversation
 
 # # Outputs
 
-# In[ ]:
+# In[217]:
 
 
 df_reddit_conversation.to_csv(f"{OUTPUT_PATH}/persona{version}.csv")
 
 
-# In[ ]:
+# In[218]:
 
 
 list_json = df_reddit_conversation["json"].tolist()
@@ -271,7 +278,7 @@ with open(f"{OUTPUT_PATH}/created_dialogues{version}.json", "wt", encoding="utf-
         file.write(str(json.dumps(dic))+"\n")
 
 
-# In[ ]:
+# In[219]:
 
 
 import subprocess
