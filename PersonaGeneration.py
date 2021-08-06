@@ -58,7 +58,7 @@ import neuralcoref
 
 # # Command Parser
 
-# In[202]:
+# In[221]:
 
 
 parser = argparse.ArgumentParser(description="preprocess of train data")
@@ -67,6 +67,7 @@ parser.add_argument("--input_json", dest="input_json", type=str, default="./redd
 parser.add_argument("--output_path", dest="output_path", type=str, default="./outputs" ,help="Output file path")
 parser.add_argument("--scheduler", dest="scheduler", type=str, default="threads" ,help="Selecting Threads, Processes, or Single Threaded")
 parser.add_argument("--is_gpu", dest="is_gpu", type=bool, default=False ,help="If you want to use gpu for processing dataframe, you set True")
+parser.add_argument("--is_parallel", dest="is_parallel", type=bool, default=True ,help="If true, do parallel processing")
 if "ipykernel" in sys.modules:
     args = parser.parse_args(args=[])
 else:
@@ -75,7 +76,7 @@ else:
 
 # # Constant
 
-# In[203]:
+# In[222]:
 
 
 NPARTITIONS = args.npartitions
@@ -83,6 +84,7 @@ INPUT_JSON = args.input_json
 OUTPUT_PATH = args.output_path
 SCHEDULER = args.scheduler
 IS_GPU = args.is_gpu
+IS_PARALLEL = args.is_parallel
 
 
 # # Setup
@@ -220,19 +222,28 @@ def create_json(row):
 
 
 print("----------create conversation pair ----------")
-if IS_GPU:
-    ddf_reddit_conversation = dask_cudf.from_cudf(data=df_reddit_conversation, npartitions=NPARTITIONS)
+if IS_PARALLEL:
+    if IS_GPU:
+        ddf_reddit_conversation = dask_cudf.from_cudf(data=df_reddit_conversation, npartitions=NPARTITIONS)
+    else:
+        ddf_reddit_conversation = dd.from_pandas(data=df_reddit_conversation, npartitions=NPARTITIONS)
+    ddf_reddit_conversation["persona"] = ddf_reddit_conversation["original_body"].map(CreatePersona)
+    ddf_reddit_conversation["parent_persona"] = ddf_reddit_conversation["original_parent_body"].map(CreatePersona)
+
+    ddf_reddit_conversation = ddf_reddit_conversation[(ddf_reddit_conversation.astype(str)["persona"]!="[]")|(ddf_reddit_conversation.astype(str)["parent_persona"]!="[]")]
+
+    ddf_reddit_conversation["body"] = ddf_reddit_conversation["body"].map(lambda sentence:nlp(sentence)._.coref_resolved)
+    ddf_reddit_conversation["parent_body"] = ddf_reddit_conversation["parent_body"].map(lambda sentence:nlp(sentence)._.coref_resolved)
+    df_reddit_conversation = ddf_reddit_conversation.compute(scheduler=SCHEDULER)
+    df_reddit_conversation = df_reddit_conversation.reset_index(drop=True)
 else:
-    ddf_reddit_conversation = dd.from_pandas(data=df_reddit_conversation, npartitions=NPARTITIONS)
-ddf_reddit_conversation["persona"] = ddf_reddit_conversation["original_body"].map(CreatePersona)
-ddf_reddit_conversation["parent_persona"] = ddf_reddit_conversation["original_parent_body"].map(CreatePersona)
+    df_reddit_conversation["persona"] = df_reddit_conversation["original_body"].progress_map(CreatePersona)
+    df_reddit_conversation["parent_persona"] = df_reddit_conversation["original_parent_body"].progress_map(CreatePersona)
 
-ddf_reddit_conversation = ddf_reddit_conversation[(ddf_reddit_conversation.astype(str)["persona"]!="[]")|(ddf_reddit_conversation.astype(str)["parent_persona"]!="[]")]
+    df_reddit_conversation = df_reddit_conversation[(df_reddit_conversation.astype(str)["persona"]!="[]")|(df_reddit_conversation.astype(str)["parent_persona"]!="[]")]
 
-ddf_reddit_conversation["body"] = ddf_reddit_conversation["body"].map(lambda sentence:nlp(sentence)._.coref_resolved)
-ddf_reddit_conversation["parent_body"] = ddf_reddit_conversation["parent_body"].map(lambda sentence:nlp(sentence)._.coref_resolved)
-df_reddit_conversation = ddf_reddit_conversation.compute(scheduler=SCHEDULER)
-df_reddit_conversation = df_reddit_conversation.reset_index(drop=True)
+    df_reddit_conversation["body"] = df_reddit_conversation["body"].progress_map(lambda sentence:nlp(sentence)._.coref_resolved)
+    df_reddit_conversation["parent_body"] = df_reddit_conversation["parent_body"].progress_map(lambda sentence:nlp(sentence)._.coref_resolved)
 df_reddit_conversation
 
 
@@ -278,7 +289,7 @@ with open(f"{OUTPUT_PATH}/created_dialogues{version}.json", "wt", encoding="utf-
         file.write(str(json.dumps(dic))+"\n")
 
 
-# In[219]:
+# In[220]:
 
 
 import subprocess
